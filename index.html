@@ -50,7 +50,7 @@
 
       <div class="product-grid">
 
-        <div class="product-card">
+        <div class="product-card" data-length="120 cm" data-width="60 cm" data-height="75 cm" data-board-depth="2.5 cm" data-frame-size="GI Pipe 25mm" data-material="Melamine Board + GI Pipe" data-weight="15 kg" data-color="Natural Wood Finish">
           <img
             src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=1200&auto=format&fit=crop"
             alt="Office Workstation Desk"
@@ -65,13 +65,14 @@
 
             <div class="price">৳ 5,500</div>
 
-            <button class="btn order-btn">
-              Order Now
-            </button>
+            <div class="product-actions">
+              <button class="btn order-btn">Order Now</button>
+              <button class="btn details-btn">Details</button>
+            </div>
           </div>
         </div>
 
-        <div class="product-card">
+        <div class="product-card" data-length="100 cm" data-width="50 cm" data-height="72 cm" data-board-depth="2.5 cm" data-frame-size="GI Pipe 25mm" data-material="Melamine Board + GI Pipe" data-weight="12 kg" data-color="Matte White">
           <img
             src="https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?q=80&w=1200&auto=format&fit=crop"
             alt="Minimal Study Table"
@@ -86,13 +87,14 @@
 
             <div class="price">৳ 4,200</div>
 
-            <button class="btn order-btn">
-              Order Now
-            </button>
+            <div class="product-actions">
+              <button class="btn order-btn">Order Now</button>
+              <button class="btn details-btn">Details</button>
+            </div>
           </div>
         </div>
 
-        <div class="product-card">
+        <div class="product-card" data-length="140 cm" data-width="70 cm" data-height="76 cm" data-board-depth="3 cm" data-frame-size="GI Pipe 32mm" data-material="Melamine Board + Heavy GI Pipe" data-weight="20 kg" data-color="Dark Oak">
           <img
             src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop"
             alt="Gaming Setup Table"
@@ -107,9 +109,10 @@
 
             <div class="price">৳ 7,000</div>
 
-            <button class="btn order-btn">
-              Order Now
-            </button>
+            <div class="product-actions">
+              <button class="btn order-btn">Order Now</button>
+              <button class="btn details-btn">Details</button>
+            </div>
           </div>
         </div>
 
@@ -164,6 +167,30 @@
       © 2026 Liton Desk Studio. All rights reserved.
     </p>
   </footer>
+
+  <!-- PRODUCT DETAILS MODAL -->
+  <div class="product-modal" id="productModal" aria-hidden="true">
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" id="modalClose" aria-label="Close details">×</button>
+      <h3 id="modalTitle">Product Details</h3>
+
+      <div class="modal-body">
+        <p id="modalDescription"></p>
+
+        <ul class="spec-list">
+          <li><strong>Length:</strong> <span id="specLength"></span></li>
+          <li><strong>Width:</strong> <span id="specWidth"></span></li>
+          <li><strong>Height:</strong> <span id="specHeight"></span></li>
+          <li><strong>Board Depth:</strong> <span id="specBoardDepth"></span></li>
+          <li><strong>Frame Size:</strong> <span id="specFrameSize"></span></li>
+          <li><strong>Material:</strong> <span id="specMaterial"></span></li>
+          <li><strong>Weight:</strong> <span id="specWeight"></span></li>
+          <li><strong>Color/Finish:</strong> <span id="specColor"></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
   <script src="assets/js/script.js"></script>
 </body>
