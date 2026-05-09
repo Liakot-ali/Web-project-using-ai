@@ -347,6 +347,47 @@ body {
 }
 
 /* ===============================
+   REVIEWS SCROLLER
+================================== */
+.reviews-section {
+  padding: 40px 0;
+  background: #fff;
+}
+.reviews-title {
+  text-align: center;
+  margin-bottom: 18px;
+  font-size: 28px;
+}
+.reviews-list {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 12px 6px;
+}
+.reviews-list::-webkit-scrollbar { height: 10px; }
+.review-card {
+  flex: 0 0 360px;
+  background: #fafafa;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.review-avatar { width: 72px; height: 72px; border-radius: 12px; flex: 0 0 72px; overflow: hidden; }
+.review-body { flex: 1; }
+.review-name { font-weight: 700; color: #222; }
+.review-meta { font-size: 13px; color: #666; margin-bottom: 6px; }
+.review-stars { color: #ffb400; margin-right: 8px; }
+.review-text { color: #333; font-size: 15px; line-height: 1.4; }
+.review-footer { margin-top: 8px; font-size: 13px; color: #888; }
+
+@media (max-width: 768px) {
+  .review-card { flex: 0 0 280px; }
+}
+
+/* ===============================
    ABOUT
 ================================== */
 
