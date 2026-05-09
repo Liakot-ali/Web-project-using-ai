@@ -51,6 +51,29 @@ body {
   z-index: 1000;
 }
 
+.logo img {
+  height: 42px;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .logo img { height: 36px; }
+}
+
+/* subtle pill behind logo to ensure contrast on both light and dark navbars */
+.logo {
+  display: inline-block;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+}
+
+/* stronger pill on very dark backgrounds */
+.navbar {
+  --logo-pill-bg: rgba(255,255,255,0.04);
+}
+.navbar .logo { background: var(--logo-pill-bg); }
+
 .nav-links {
   display: flex;
   list-style: none;
