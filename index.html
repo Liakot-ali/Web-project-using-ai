@@ -284,15 +284,60 @@
 
       <h2 class="section-title">Contact Us</h2>
 
-      <div class="contact-info">
-        <p>📞 Phone: +8801XXXXXXXXX</p>
-        <p>📧 Email: yourmail@gmail.com</p>
-        <p>📍 Dhaka, Bangladesh</p>
-      </div>
+      <div class="contact-grid">
+        <div class="contact-card">
+          <h3>Reach us — quickly</h3>
+          <p class="contact-small">Choose the method that suits you: chat, call, or send a quick message.</p>
 
-      <a href="#" class="btn whatsapp-btn">
-        Chat on WhatsApp
-      </a>
+          <div class="contact-lines">
+            <div class="contact-line"><strong>Phone</strong><a href="tel:+8801XXXXXXXXX"> +8801XXXXXXXXX</a></div>
+            <div class="contact-line"><strong>WhatsApp</strong><a id="waDirect" href="#"> Chat on WhatsApp</a></div>
+            <div class="contact-line"><strong>Email</strong><a href="mailto:yourmail@gmail.com"> yourmail@gmail.com</a></div>
+            <div class="contact-line"><strong>Address</strong><span> Dhaka, Bangladesh</span></div>
+          </div>
+
+          <div class="contact-meta">
+            <div><strong>Hours</strong><div class="contact-small">Mon–Sat 9:00–18:00</div></div>
+          </div>
+
+          <div style="margin-top:14px">
+            <a class="btn" href="tel:+8801XXXXXXXXX">Call Now</a>
+            <a class="btn" id="waPrimary" href="#" style="background:#25D366;margin-left:10px;">Message on WhatsApp</a>
+          </div>
+        </div>
+
+        <div class="contact-card contact-form-card">
+          <h3>Send a quick message</h3>
+          <form id="contactForm">
+            <div class="form-row">
+              <label for="cName">Name</label>
+              <input id="cName" name="name" class="contact-input" type="text" placeholder="Your name" required />
+            </div>
+
+            <div class="form-row">
+              <label for="cPhone">Phone (optional)</label>
+              <input id="cPhone" name="phone" class="contact-input" type="tel" placeholder="01XXXXXXXXX" />
+            </div>
+
+            <div class="form-row">
+              <label for="cEmail">Email (optional)</label>
+              <input id="cEmail" name="email" class="contact-input" type="email" placeholder="you@example.com" />
+            </div>
+
+            <div class="form-row">
+              <label for="cMessage">Message</label>
+              <textarea id="cMessage" name="message" class="contact-textarea" placeholder="Hi — I want a custom desk..." required></textarea>
+            </div>
+
+            <div class="form-row" style="display:flex;gap:10px;align-items:center;margin-top:8px;">
+              <button type="submit" class="btn">Send via WhatsApp</button>
+              <button type="button" id="emailFallback" class="btn" style="background:#019170;">Send via Email</button>
+            </div>
+
+            <div id="contactStatus" aria-live="polite" style="margin-top:8px;font-size:14px;color:#333"></div>
+          </form>
+        </div>
+      </div>
 
     </div>
 

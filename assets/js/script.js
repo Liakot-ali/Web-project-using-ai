@@ -76,4 +76,73 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === 'Escape') closeModal();
   });
 
+  // ==========================
+  // Contact form -> WhatsApp
+  // ==========================
+  const CONTACT_WHATSAPP_NUMBER = '8801XXXXXXXXX'; // international format without +
+
+  function openWhatsAppWithMessage(number, text) {
+    const encoded = encodeURIComponent(text);
+    const url = `https://wa.me/${number}?text=${encoded}`;
+    window.open(url, '_blank');
+  }
+
+  const contactForm = document.getElementById('contactForm');
+  const contactStatus = document.getElementById('contactStatus');
+  const waPrimary = document.getElementById('waPrimary');
+  const waDirect = document.getElementById('waDirect');
+  const emailFallback = document.getElementById('emailFallback');
+
+  if (waPrimary) {
+    waPrimary.addEventListener('click', (e) => {
+      e.preventDefault();
+      // focus the form for quick fill
+      const n = document.getElementById('cName');
+      if (n) n.focus();
+    });
+  }
+
+  if (waDirect) {
+    waDirect.addEventListener('click', (e) => {
+      e.preventDefault();
+      const txt = `Hello Liton Desk Studio! I'm reaching out via your website.`;
+      openWhatsAppWithMessage(CONTACT_WHATSAPP_NUMBER, txt);
+    });
+  }
+
+  if (contactForm) {
+    contactForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      contactStatus.textContent = '';
+
+      const name = (document.getElementById('cName') || {}).value || '';
+      const phone = (document.getElementById('cPhone') || {}).value || '';
+      const email = (document.getElementById('cEmail') || {}).value || '';
+      const message = (document.getElementById('cMessage') || {}).value || '';
+
+      if (!name.trim() || !message.trim()) {
+        contactStatus.textContent = 'Please add your name and a short message.';
+        return;
+      }
+
+      const payload = `Name: ${name}\nPhone: ${phone}\nEmail: ${email}\nMessage: ${message}`;
+      contactStatus.textContent = 'Opening WhatsApp…';
+      setTimeout(() => {
+        openWhatsAppWithMessage(CONTACT_WHATSAPP_NUMBER, payload);
+        contactStatus.textContent = '';
+      }, 250);
+    });
+  }
+
+  if (emailFallback) {
+    emailFallback.addEventListener('click', () => {
+      const name = (document.getElementById('cName') || {}).value || '';
+      const email = (document.getElementById('cEmail') || {}).value || '';
+      const message = (document.getElementById('cMessage') || {}).value || '';
+      const subject = encodeURIComponent(`Contact from website: ${name || 'Visitor'}`);
+      const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`);
+      window.location.href = `mailto:yourmail@gmail.com?subject=${subject}&body=${body}`;
+    });
+  }
+
 });
