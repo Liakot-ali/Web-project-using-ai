@@ -29,6 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (image) document.getElementById('prodImage').src = image;
 
+  // Robust image loading: preload main image and fallback to SVG placeholder on error
+  const prodImageEl = document.getElementById('prodImage');
+  if (image && prodImageEl) {
+    const preload = new Image();
+    preload.onload = () => { prodImageEl.src = image; };
+    preload.onerror = () => { prodImageEl.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450"><rect width="100%" height="100%" fill="%23f0f0f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-size="20">Image unavailable</text></svg>'; };
+    preload.src = image;
+  }
+
   const specs = [
     ['SKU', sku],
     ['Length', length],
@@ -95,6 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const img = document.createElement('img');
       img.src = prod.image;
       img.alt = prod.name;
+      img.loading = 'lazy';
+      img.onerror = () => { img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"><rect width="100%" height="100%" fill="%23f8f8f8"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-size="14">Image unavailable</text></svg>'; };
 
       const info = document.createElement('div');
       info.className = 'related-info';
