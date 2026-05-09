@@ -114,17 +114,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const viewBtn = document.createElement('a');
       viewBtn.className = 'btn';
       viewBtn.textContent = 'View';
-      // build URL with product params
-      const url = new URL(window.location.origin + window.location.pathname.replace(/[^\/]*$/, 'product.html'));
-      url.searchParams.set('name', prod.name);
-      url.searchParams.set('category', currentCategory);
-      url.searchParams.set('price', prod.price);
-      url.searchParams.set('length', prod.length);
-      url.searchParams.set('width', prod.width);
-      url.searchParams.set('height', prod.height);
-      url.searchParams.set('image', prod.image);
-      url.searchParams.set('desc', prod.name + ' - high quality and durable.');
-      viewBtn.href = url.toString();
+      // build relative URL with product params (works with file:// and http://)
+      const params = new URLSearchParams();
+      params.set('name', prod.name);
+      params.set('category', currentCategory);
+      params.set('price', prod.price);
+      params.set('length', prod.length);
+      params.set('width', prod.width);
+      params.set('height', prod.height);
+      if (prod.image) params.set('image', prod.image);
+      if (prod.desc) params.set('desc', prod.desc);
+      const urlStr = 'product.html?' + params.toString();
+      viewBtn.href = urlStr;
 
       const orderBtn = document.createElement('button');
       orderBtn.className = 'btn';
