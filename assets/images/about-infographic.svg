@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="420" viewBox="0 0 600 420" role="img" aria-label="Why choose Liton Desk Studio infographic">
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1">
+      <stop offset="0%" stop-color="#00b894"/>
+      <stop offset="100%" stop-color="#019170"/>
+    </linearGradient>
+    <style>
+      .h{font:700 18px/1.1 Arial,Helvetica,sans-serif;fill:#122;}
+      .s{font:400 14px/1.2 Arial,Helvetica,sans-serif;fill:#444;}
+      .pill{rx:8;fill:#fff;stroke:#e8f0ee;}
+    </style>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#f8fffc" rx="12"/>
+
+  <g transform="translate(28,28)">
+    <text class="h" x="0" y="0">Why customers love our tables</text>
+    <text class="s" x="0" y="28">Custom-built • Eco-friendly • Built to last</text>
+
+    <!-- Icons + bullets -->
+    <g transform="translate(0,56)" fill="#fff">
+      <rect class="pill" x="0" y="0" width="260" height="64" />
+      <rect x="8" y="10" width="44" height="44" fill="url(#g1)" rx="6" />
+      <text x="64" y="28" class="s" fill="#122">Made-To-Order</text>
+      <text x="64" y="46" class="s" fill="#666">Precision sizes for every room</text>
+    </g>
+
+    <g transform="translate(0,136)" fill="#fff">
+      <rect class="pill" x="0" y="0" width="260" height="64" />
+      <rect x="8" y="10" width="44" height="44" fill="#4f6cff" rx="6" />
+      <text x="64" y="28" class="s" fill="#122">Locally Crafted</text>
+      <text x="64" y="46" class="s" fill="#666">Support local artisans</text>
+    </g>
+
+    <g transform="translate(0,216)" fill="#fff">
+      <rect class="pill" x="0" y="0" width="260" height="64" />
+      <rect x="8" y="10" width="44" height="44" fill="#ffb400" rx="6" />
+      <text x="64" y="28" class="s" fill="#122">Eco Materials</text>
+      <text x="64" y="46" class="s" fill="#666">Sustainable melamine &amp; recycled steel</text>
+    </g>
+
+    <g transform="translate(300,56)">
+      <rect width="260" height="220" rx="10" fill="#fff" stroke="#e6f0ec"/>
+      <text x="16" y="28" class="h">Our Promise</text>
+      <text x="16" y="56" class="s">Free local delivery • 1-year warranty • Easy returns</text>
+
+      <g transform="translate(16,88)" fill="#122" class="s">
+        <text x="0" y="0">✔ Quality checks on every desk</text>
+        <text x="0" y="26">✔ Quick customization &amp; finishes</text>
+        <text x="0" y="52">✔ WhatsApp support for orders</text>
+      </g>
+    </g>
+
+    <!-- stat badge -->
+    <g transform="translate(300,272)">
+      <rect width="120" height="64" rx="8" fill="url(#g1)" />
+      <text x="12" y="28" font-family="Arial" font-weight="700" font-size="22" fill="#fff">1,200+</text>
+      <text x="12" y="46" font-family="Arial" font-size="12" fill="#fff">Desks delivered</text>
+    </g>
+
+  </g>
+
+</svg>

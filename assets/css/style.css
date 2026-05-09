@@ -402,6 +402,35 @@ body {
   font-size: 18px;
 }
 
+/* About grid with infographic */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 28px;
+  align-items: center;
+}
+.about-graphic img, .about-graphic svg {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.06);
+}
+.about-cta { margin-top: 16px; }
+
+@media (max-width: 900px) {
+  .about-grid { grid-template-columns: 1fr; }
+  .about-graphic { order: -1; }
+}
+
+/* Feature rows (icon + text) */
+.about-features { display: grid; gap: 12px; margin-top: 12px; }
+.feature-row { display:flex; gap:12px; align-items:flex-start; }
+.feature-icon { width:44px; height:44px; flex:0 0 44px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; background:#fff; box-shadow:0 6px 18px rgba(0,0,0,0.04); }
+.feature-icon svg { width:24px; height:24px; display:block; }
+.feature-text { flex:1; }
+.feature-title { font-weight:700; color:#222; font-size:15px; }
+.feature-desc { color:#555; font-size:14px; margin-top:4px; }
+
 /* ===============================
    CONTACT
 ================================== */
