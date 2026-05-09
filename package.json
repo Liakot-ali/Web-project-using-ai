@@ -1,0 +1,11 @@
+{
+  "name": "liton-desk-studio-playwright",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "report": "node tools/playwright-report.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.39.0"
+  }
+}

@@ -27,15 +27,28 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('prodShortDesc').textContent = shortDesc;
   document.getElementById('prodLongDesc').textContent = longDesc;
 
-  if (image) document.getElementById('prodImage').src = image;
+  const placeholder = 'assets/images/placeholder.svg';
 
-  // Robust image loading: preload main image and fallback to SVG placeholder on error
+  // Helper: avoid loading external (remote) images during local/headless checks.
+  const isExternal = (url) => /^https?:\/\//i.test(url);
+  // Toggle: allow remote images in production. Set to false for offline/headless runs.
+  const ALLOW_REMOTE_IMAGES = true;
+
   const prodImageEl = document.getElementById('prodImage');
-  if (image && prodImageEl) {
-    const preload = new Image();
-    preload.onload = () => { prodImageEl.src = image; };
-    preload.onerror = () => { prodImageEl.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450"><rect width="100%" height="100%" fill="%23f0f0f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-size="20">Image unavailable</text></svg>'; };
-    preload.src = image;
+  if (prodImageEl) {
+    if (image) {
+      if (isExternal(image) && !ALLOW_REMOTE_IMAGES) {
+        prodImageEl.src = placeholder;
+      } else {
+        // preload image (remote or local) and fallback to placeholder
+        const preload = new Image();
+        preload.onload = () => { prodImageEl.src = image; };
+        preload.onerror = () => { prodImageEl.src = placeholder; };
+        preload.src = image;
+      }
+    } else {
+      prodImageEl.src = placeholder;
+    }
   }
 
   const specs = [
@@ -102,10 +115,11 @@ document.addEventListener('DOMContentLoaded', () => {
       card.className = 'related-card';
 
       const img = document.createElement('img');
-      img.src = prod.image;
       img.alt = prod.name;
       img.loading = 'lazy';
-      img.onerror = () => { img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200"><rect width="100%" height="100%" fill="%23f8f8f8"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-size="14">Image unavailable</text></svg>'; };
+      // Use remote images in production unless explicitly disabled by ALLOW_REMOTE_IMAGES
+      img.src = (isExternal(prod.image) && !ALLOW_REMOTE_IMAGES) ? placeholder : prod.image;
+      img.onerror = () => { img.src = placeholder; };
 
       const info = document.createElement('div');
       info.className = 'related-info';
