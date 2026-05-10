@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Liton Desk Studio</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header class="navbar">
+    <div class="container" style="display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="index.html"><img src="assets/images/logo.svg" alt="Liton Desk Studio logo" style="height:36px"></a>
+        <h2 style="color:#fff;margin:0;font-size:18px">Admin Panel</h2>
+      </div>
+      <div>
+        <a href="index.html" class="btn" style="background:#fff;color:#111">Back to site</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container section" style="padding-top:30px;">
+    <section class="admin-page">
+      <h3 id="adminTitle">Site Admin — Products</h3>
+
+      <div class="admin-actions" style="margin-bottom:12px">
+        <button id="adminAdd" class="btn">Add Product</button>
+        <button id="adminImport" class="btn">Import JSON</button>
+        <button id="adminExport" class="btn">Export JSON</button>
+        <button id="adminLogout" class="btn" style="background:#e06b6b;">Logout</button>
+      </div>
+
+      <div id="adminList" class="admin-list"></div>
+    </section>
+  </main>
+
+  <script src="assets/js/script.js"></script>
+</body>
+</html>

@@ -22,7 +22,12 @@ document.addEventListener("DOMContentLoaded", () => {
     detailsLinks.forEach(link => {
       link.removeEventListener('click', link._ldsDetailsHandler);
       const handler = (e) => {
-        // if productModal exists, prevent navigation and open modal instead
+        const href = (link.getAttribute('href') || '').trim();
+        // Allow normal navigation for explicit product page links and anchors
+        if (href.includes('product.html') || href.startsWith('#') || href.startsWith('http')) {
+          return;
+        }
+        // For other links (or missing href), open the modal when available
         if (document.getElementById('productModal')) {
           e.preventDefault();
           const card = e.currentTarget.closest('.product-card');
@@ -84,8 +89,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  modalBackdrop.addEventListener('click', closeModal);
-  modalClose.addEventListener('click', closeModal);
+  if (modalBackdrop) modalBackdrop.addEventListener('click', closeModal);
+  if (modalClose) modalClose.addEventListener('click', closeModal);
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeModal();
@@ -175,26 +180,96 @@ document.addEventListener("DOMContentLoaded", () => {
   const adminImport = document.getElementById('adminImport');
   const adminLogout = document.getElementById('adminLogout');
 
+  const ADMIN_LOCK_KEY = 'lds_admin_lock';
+  const ADMIN_LOCK_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+  const ADMIN_HEARTBEAT_MS = 25 * 1000; // refresh lock every 25s
+  let adminHeartbeatInterval = null;
+
   function authAndOpenAdmin() {
-    const logged = sessionStorage.getItem('lds_admin') === '1';
-    if (!logged) {
-      const pass = prompt('Admin passphrase:');
-      if (!pass || pass !== ADMIN_PASSWORD) {
-        alert('Authentication failed');
-        return;
+    // Always require passphrase on each entry
+    const passRaw = prompt('Admin passphrase:');
+    const pass = passRaw ? passRaw.trim() : '';
+    if (!pass) { alert('Authentication cancelled'); return; }
+    if (pass !== ADMIN_PASSWORD) { alert('Authentication failed — incorrect passphrase'); return; }
+
+    // generate a local owner id for this session
+    const owner = sessionStorage.getItem('lds_admin_owner') || (`owner-${Date.now()}-${Math.floor(Math.random()*100000)}`);
+    sessionStorage.setItem('lds_admin_owner', owner);
+
+    // attempt to acquire lock
+    const now = Date.now();
+    try {
+      const raw = localStorage.getItem(ADMIN_LOCK_KEY);
+      if (raw) {
+        try {
+          const lock = JSON.parse(raw);
+          // if another owner holds a fresh lock, deny entry
+          if (lock && lock.ts && (now - lock.ts) < ADMIN_LOCK_TIMEOUT && lock.owner && lock.owner !== owner) {
+            alert('Admin panel is currently in use by another user. Try again later.');
+            return;
+          }
+        } catch (e) {
+          // continue if parse fails
+        }
       }
-      sessionStorage.setItem('lds_admin', '1');
+      // set lock for this owner
+      const newLock = { owner, ts: now };
+      localStorage.setItem(ADMIN_LOCK_KEY, JSON.stringify(newLock));
+      // navigate to admin page
+      window.location.href = 'admin.html';
+    } catch (e) {
+      alert('Unable to open admin page: ' + (e && e.message));
     }
-    openAdmin();
+  }
+
+  // lock helpers used on admin page to refresh and release lock
+  function refreshAdminLock() {
+    try {
+      const owner = sessionStorage.getItem('lds_admin_owner');
+      if (!owner) return false;
+      const now = Date.now();
+      const lock = { owner, ts: now };
+      localStorage.setItem(ADMIN_LOCK_KEY, JSON.stringify(lock));
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function releaseAdminLock() {
+    try {
+      const owner = sessionStorage.getItem('lds_admin_owner');
+      if (!owner) return;
+      const raw = localStorage.getItem(ADMIN_LOCK_KEY);
+      if (!raw) return;
+      const lock = JSON.parse(raw);
+      if (lock && lock.owner === owner) {
+        localStorage.removeItem(ADMIN_LOCK_KEY);
+      }
+    } catch (e) {}
+  }
+
+  // start heartbeat to keep lock alive while on admin page
+  function startAdminHeartbeat() {
+    stopAdminHeartbeat();
+    refreshAdminLock();
+    adminHeartbeatInterval = setInterval(refreshAdminLock, ADMIN_HEARTBEAT_MS);
+  }
+
+  function stopAdminHeartbeat() {
+    if (adminHeartbeatInterval) { clearInterval(adminHeartbeatInterval); adminHeartbeatInterval = null; }
   }
 
   function openAdmin() {
-    adminModal.setAttribute('aria-hidden', 'false');
+    if (adminModal) {
+      adminModal.setAttribute('aria-hidden', 'false');
+      const content = adminModal.querySelector('.admin-content');
+      if (content && !content.hasAttribute('tabindex')) content.setAttribute('tabindex', '-1');
+      try { content.focus(); } catch (e) {}
+    }
     renderAdminList(loadProducts());
   }
 
   function closeAdmin() {
-    adminModal.setAttribute('aria-hidden', 'true');
+    if (adminModal) adminModal.setAttribute('aria-hidden', 'true');
   }
 
   function loadProducts() {
@@ -254,10 +329,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderProductsToDOM(products) {
     const grids = Array.from(document.querySelectorAll('.product-grid'));
     if (!grids.length) return;
-    const perGrid = Math.ceil(products.length / grids.length) || products.length;
-    for (let i = 0; i < grids.length; i++) {
-      const slice = products.slice(i * perGrid, (i + 1) * perGrid);
-      grids[i].innerHTML = slice.map(p => {
+    // sort by priority desc (higher priority first). Missing priority -> 0
+    const sorted = (products || []).slice().sort((a,b)=> (Number(b.priority)||0) - (Number(a.priority)||0));
+    // Homepage: show top 6 only in the first product grid
+    const top = sorted.slice(0,6);
+    grids[0].innerHTML = top.map(p => {
         const img = p.image || 'assets/images/placeholder.svg';
         const priceLabel = p.price ? `৳ ${p.price}` : '';
         const details = createDetailsUrl(p);
@@ -274,8 +350,10 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
             </div>
           </div>`;
-      }).join('\n');
-    }
+    }).join('\n');
+
+    // Clear other grids so duplicates don't appear
+    for (let i = 1; i < grids.length; i++) grids[i].innerHTML = '';
   }
 
   function renderAdminList(products) {
@@ -286,11 +364,20 @@ document.addEventListener("DOMContentLoaded", () => {
       item.dataset.index = idx;
       item.innerHTML = `
         <div class="admin-fields">
-          <input data-key="name" value="${(p.name||'').replace(/"/g,'&quot;')}" placeholder="Product name">
-          <input data-key="category" value="${(p.category||'').replace(/"/g,'&quot;')}" placeholder="Category">
-          <input data-key="price" value="${(p.price||'').replace(/"/g,'&quot;')}" placeholder="Price">
-          <input data-key="image" value="${(p.image||'').replace(/"/g,'&quot;')}" placeholder="Image URL">
-          <textarea data-key="desc" placeholder="Short description">${(p.desc||'').replace(/</g,'&lt;')}</textarea>
+          <label>Title<br><input title="Title" data-key="name" value="${(p.name||'').replace(/"/g,'&quot;')}" placeholder="Product name"></label>
+          <label>Category<br><input title="Category" data-key="category" value="${(p.category||'').replace(/"/g,'&quot;')}" placeholder="Category"></label>
+          <label>Price<br><input title="Price" data-key="price" value="${(p.price||'').replace(/"/g,'&quot;')}" placeholder="Price"></label>
+          <label>Priority<br><input title="Priority" data-key="priority" value="${(p.priority||'0').replace(/"/g,'&quot;')}" placeholder="Priority (higher = shows earlier)"></label>
+          <label>Image URL<br><input title="Image URL" data-key="image" value="${(p.image||'').replace(/"/g,'&quot;')}" placeholder="Image URL"></label>
+          <label>Length<br><input title="Length" data-key="length" value="${(p.length||'').replace(/"/g,'&quot;')}" placeholder="Length"></label>
+          <label>Width<br><input title="Width" data-key="width" value="${(p.width||'').replace(/"/g,'&quot;')}" placeholder="Width"></label>
+          <label>Height<br><input title="Height" data-key="height" value="${(p.height||'').replace(/"/g,'&quot;')}" placeholder="Height"></label>
+          <label>Board Depth<br><input title="Board Depth" data-key="boardDepth" value="${(p.boardDepth||'').replace(/"/g,'&quot;')}" placeholder="Board Depth"></label>
+          <label>Frame Size<br><input title="Frame Size" data-key="frameSize" value="${(p.frameSize||'').replace(/"/g,'&quot;')}" placeholder="Frame Size"></label>
+          <label>Material<br><input title="Material" data-key="material" value="${(p.material||'').replace(/"/g,'&quot;')}" placeholder="Material"></label>
+          <label>Weight<br><input title="Weight" data-key="weight" value="${(p.weight||'').replace(/"/g,'&quot;')}" placeholder="Weight"></label>
+          <label>Color/Finish<br><input title="Color/Finish" data-key="color" value="${(p.color||'').replace(/"/g,'&quot;')}" placeholder="Color/Finish"></label>
+          <label>Description<br><textarea title="Short description" data-key="desc" placeholder="Short description">${(p.desc||'').replace(/</g,'&lt;')}</textarea></label>
         </div>
         <div class="admin-item-controls">
           <button class="btn admin-save">Save</button>
@@ -341,44 +428,105 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  adminBackdrop.addEventListener('click', closeAdmin);
-  adminClose.addEventListener('click', closeAdmin);
+  // admin entry button (visible control)
+  const adminEntryBtn = document.getElementById('adminEntryBtn');
+  if (adminEntryBtn) {
+    adminEntryBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      authAndOpenAdmin();
+    });
+  }
 
-  adminAdd.addEventListener('click', () => {
-    const all = loadProducts();
-    all.unshift({ name: 'New Product', category:'General', price:'0', length:'', width:'', height:'', boardDepth:'', frameSize:'', material:'', weight:'', color:'', desc:'', image:'' });
-    saveProducts(all);
-    renderAdminList(all);
-    renderProductsToDOM(all);
-    bindProductInteractions();
-  });
+  if (adminBackdrop) adminBackdrop.addEventListener('click', closeAdmin);
+  if (adminClose) adminClose.addEventListener('click', closeAdmin);
 
-  adminExport.addEventListener('click', () => {
-    const data = JSON.stringify(loadProducts(), null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'products-export.json'; a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  adminImport.addEventListener('click', () => {
-    const txt = prompt('Paste products JSON here:');
-    if (!txt) return;
-    try {
-      const data = JSON.parse(txt);
-      if (!Array.isArray(data)) throw new Error('Expected array');
-      saveProducts(data);
-      renderAdminList(data);
-      renderProductsToDOM(data);
+  if (adminAdd) {
+    adminAdd.addEventListener('click', () => {
+      const all = loadProducts();
+      all.unshift({ name: 'New Product', category:'General', price:'0', priority:'0', length:'', width:'', height:'', boardDepth:'', frameSize:'', material:'', weight:'', color:'', desc:'', image:'' });
+      saveProducts(all);
+      renderAdminList(all);
+      renderProductsToDOM(all);
       bindProductInteractions();
-      alert('Imported and applied');
-    } catch (e) {
-      alert('Invalid JSON: ' + e.message);
-    }
-  });
+    });
+  }
 
-  adminLogout.addEventListener('click', () => { sessionStorage.removeItem('lds_admin'); closeAdmin(); alert('Logged out'); });
+  if (adminExport) {
+    adminExport.addEventListener('click', () => {
+      const data = JSON.stringify(loadProducts(), null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'products-export.json'; a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  if (adminImport) {
+    adminImport.addEventListener('click', () => {
+      const txt = prompt('Paste products JSON here:');
+      if (!txt) return;
+      try {
+        const data = JSON.parse(txt);
+        if (!Array.isArray(data)) throw new Error('Expected array');
+        saveProducts(data);
+        renderAdminList(data);
+        renderProductsToDOM(data);
+        bindProductInteractions();
+        alert('Imported and applied');
+      } catch (e) {
+        alert('Invalid JSON: ' + e.message);
+      }
+    });
+  }
+
+  if (adminLogout) {
+    adminLogout.addEventListener('click', () => {
+      try { releaseAdminLock(); stopAdminHeartbeat(); } catch (e) {}
+      sessionStorage.removeItem('lds_admin');
+      sessionStorage.removeItem('lds_admin_owner');
+      closeAdmin();
+      alert('Logged out');
+      // if we're on admin page, go back to site
+      if (window.location.pathname && window.location.pathname.endsWith('admin.html')) {
+        window.location.href = 'index.html';
+      }
+    });
+  }
+
+  // If running on admin.html, validate/claim lock and start heartbeat
+  try {
+    if (window.location.pathname && window.location.pathname.endsWith('admin.html')) {
+      const owner = sessionStorage.getItem('lds_admin_owner');
+      const raw = localStorage.getItem(ADMIN_LOCK_KEY);
+      const now = Date.now();
+      let allowed = false;
+      if (raw) {
+        try {
+          const lock = JSON.parse(raw);
+          if (lock && lock.owner === owner) allowed = true;
+          if (lock && (now - lock.ts) >= ADMIN_LOCK_TIMEOUT) allowed = true; // expired
+        } catch (e) { allowed = true; }
+      } else {
+        allowed = true;
+      }
+      if (!allowed) {
+        alert('Admin panel is currently in use by another user. You cannot open it now.');
+        window.location.href = 'index.html';
+      } else {
+        // claim and start heartbeat
+        refreshAdminLock();
+        startAdminHeartbeat();
+        // render admin UI now that lock is claimed
+        try { renderAdminList(loadProducts()); } catch (e) {}
+      }
+    }
+  } catch (e) {}
+
+  // ensure lock released when leaving admin page
+  window.addEventListener('beforeunload', () => {
+    try { releaseAdminLock(); stopAdminHeartbeat(); } catch (e) {}
+  });
 
   // On load: if stored products exist, render them and bind interactions
   try {
