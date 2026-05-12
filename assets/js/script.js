@@ -37,6 +37,34 @@ document.addEventListener("DOMContentLoaded", () => {
       link._ldsDetailsHandler = handler;
       link.addEventListener('click', handler);
     });
+
+    // make entire product card clickable: navigate to details page or open modal
+    const productCards = document.querySelectorAll('.product-card');
+    productCards.forEach(card => {
+      card.removeEventListener('click', card._ldsCardHandler);
+      const handler = (e) => {
+        // ignore clicks on interactive elements inside the card
+        if (e.target.closest('a, button, input, textarea, select')) return;
+        const link = card.querySelector('.details-link');
+        if (!link) return;
+        const href = (link.getAttribute('href') || '').trim();
+        // if details link points to a dedicated product page, navigate
+        if (href.includes('product.html')) {
+          if (e.metaKey || e.ctrlKey) {
+            window.open(href, '_blank');
+          } else {
+            window.location.href = href;
+          }
+          return;
+        }
+        // otherwise, if a product modal exists, open it
+        if (document.getElementById('productModal')) {
+          openModalFromCard(card);
+        }
+      };
+      card._ldsCardHandler = handler;
+      card.addEventListener('click', handler);
+    });
   }
 
   // Details modal functionality
