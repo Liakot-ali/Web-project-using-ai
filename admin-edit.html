@@ -24,10 +24,19 @@
       <div style="display:flex;gap:16px;flex-wrap:wrap">
         <div style="flex:1;min-width:320px">
           <label>Title<br><input id="p_name" required></label>
-          <label>Category<br><input id="p_category"></label>
+          <label>Category<br>
+            <select id="p_category">
+              <option value="">— Select category —</option>
+            </select>
+          </label>
           <label>Price<br><input id="p_price" type="number" step="0.01"></label>
           <label>Priority<br><input id="p_priority" type="number"></label>
-          <label>Image URL<br><input id="p_image"></label>
+          <label>Image URL<br>
+            <input id="p_image" placeholder="https://.../image.jpg">
+          </label>
+          <div style="margin-top:8px">
+            <img id="p_image_preview" src="assets/images/placeholder.svg" alt="Preview" style="max-width:160px;max-height:120px;border:1px solid #ddd;padding:6px;background:#fff">
+          </div>
           <label>Description<br><textarea id="p_desc" rows="4"></textarea></label>
         </div>
         <div style="width:320px">
@@ -36,9 +45,26 @@
           <label>Height<br><input id="p_height"></label>
           <label>Board Depth<br><input id="p_boardDepth"></label>
           <label>Frame Size<br><input id="p_frameSize"></label>
-          <label>Material<br><input id="p_material"></label>
+          <label>Material<br>
+            <select id="p_material">
+              <option value="">— Select material —</option>
+              <option>Engineered Wood</option>
+              <option>Solid Wood</option>
+              <option>Metal</option>
+              <option>Laminate</option>
+            </select>
+          </label>
           <label>Weight<br><input id="p_weight"></label>
-          <label>Color/Finish<br><input id="p_color"></label>
+          <label>Color/Finish<br>
+            <select id="p_color">
+              <option value="">— Select color/finish —</option>
+              <option>Natural</option>
+              <option>Walnut</option>
+              <option>Black</option>
+              <option>White</option>
+              <option>Oak</option>
+            </select>
+          </label>
         </div>
       </div>
 
