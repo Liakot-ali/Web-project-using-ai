@@ -38,6 +38,27 @@
         height: 300px;
       }
     }
+    /* Image zoom overlay */
+    .image-zoom-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.85);
+      z-index: 9999;
+      cursor: zoom-out;
+      padding: 20px;
+    }
+    .image-zoom-overlay.show { display:flex; }
+    .image-zoom-overlay img {
+      max-width: 96%;
+      max-height: 96%;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      transform-origin: center center;
+      transition: transform 240ms ease;
+    }
   </style>
 </head>
 <body>
@@ -89,6 +110,11 @@
   <footer class="footer">
     <div class="container">© 2026 Liton Desk Studio</div>
   </footer>
+
+  <!-- Zoom overlay (populated by product.js) -->
+  <div id="imageZoomOverlay" class="image-zoom-overlay" aria-hidden="true">
+    <img id="zoomedImage" alt="Zoomed product image" />
+  </div>
 
   <script src="assets/js/seed-products.js"></script>
   <script src="assets/js/product.js"></script>

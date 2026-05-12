@@ -49,7 +49,152 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       prodImageEl.src = placeholder;
     }
+    // make image clickable to open zoom overlay
+    prodImageEl.style.cursor = 'zoom-in';
   }
+
+  // Image zoom overlay handlers
+  const imageZoomOverlay = document.getElementById('imageZoomOverlay');
+  const zoomedImage = document.getElementById('zoomedImage');
+  // state for zoom/pan
+  let currentScale = 1;
+  let posX = 0, posY = 0;
+  let isPanning = false;
+  let startPanX = 0, startPanY = 0;
+  let startPosX = 0, startPosY = 0;
+  let isPinching = false;
+  let pinchStartDist = 0;
+  let pinchStartScale = 1;
+  function openImageZoom(src, alt) {
+    if (!imageZoomOverlay || !zoomedImage) return;
+    zoomedImage.src = src || prodImageEl.src || placeholder;
+    zoomedImage.alt = alt || prodImageEl.alt || '';
+    imageZoomOverlay.classList.add('show');
+    imageZoomOverlay.setAttribute('aria-hidden', 'false');
+    // initial stronger zoom
+    currentScale = 1.8;
+    posX = 0; posY = 0;
+    setTransform();
+  }
+  function closeImageZoom() {
+    if (!imageZoomOverlay || !zoomedImage) return;
+    // reset transform and state
+    currentScale = 1;
+    posX = 0; posY = 0;
+    setTransform();
+    imageZoomOverlay.classList.remove('show');
+    imageZoomOverlay.setAttribute('aria-hidden', 'true');
+    zoomedImage.src = '';
+  }
+
+  function setTransform() {
+    if (!zoomedImage) return;
+    zoomedImage.style.transform = `translate(${posX}px, ${posY}px) scale(${currentScale})`;
+  }
+
+  if (prodImageEl && imageZoomOverlay && zoomedImage) {
+    prodImageEl.addEventListener('click', () => openImageZoom(prodImageEl.src, prodImageEl.alt));
+    imageZoomOverlay.addEventListener('click', (e) => {
+      // close only when clicking overlay (not the image)
+      if (e.target === imageZoomOverlay) closeImageZoom();
+    });
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') closeImageZoom();
+    });
+  }
+
+  // Mouse drag (pan) when zoomed
+  imageZoomOverlay.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return; // left button only
+    if (currentScale <= 1) return; // nothing to pan
+    isPanning = true;
+    startPanX = e.clientX;
+    startPanY = e.clientY;
+    startPosX = posX;
+    startPosY = posY;
+    imageZoomOverlay.setPointerCapture && imageZoomOverlay.setPointerCapture(e.pointerId);
+  });
+  imageZoomOverlay.addEventListener('pointermove', (e) => {
+    if (!isPanning) return;
+    const dx = e.clientX - startPanX;
+    const dy = e.clientY - startPanY;
+    posX = startPosX + dx;
+    posY = startPosY + dy;
+    setTransform();
+  });
+  imageZoomOverlay.addEventListener('pointerup', (e) => {
+    if (isPanning) {
+      isPanning = false;
+      imageZoomOverlay.releasePointerCapture && imageZoomOverlay.releasePointerCapture(e.pointerId);
+    }
+  });
+
+  // Touch pinch to zoom (and single-finger drag)
+  imageZoomOverlay.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      isPinching = true;
+      pinchStartDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      pinchStartScale = currentScale || 1;
+    } else if (e.touches.length === 1 && currentScale > 1) {
+      // start pan with touch
+      isPanning = true;
+      startPanX = e.touches[0].clientX;
+      startPanY = e.touches[0].clientY;
+      startPosX = posX; startPosY = posY;
+    }
+  }, { passive: false });
+
+  imageZoomOverlay.addEventListener('touchmove', (e) => {
+    if (isPinching && e.touches.length === 2) {
+      e.preventDefault();
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      let next = pinchStartScale * (dist / pinchStartDist);
+      next = Math.max(1, Math.min(next, 4));
+      currentScale = next;
+      setTransform();
+    } else if (isPanning && e.touches.length === 1) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - startPanX;
+      const dy = e.touches[0].clientY - startPanY;
+      posX = startPosX + dx;
+      posY = startPosY + dy;
+      setTransform();
+    }
+  }, { passive: false });
+
+  imageZoomOverlay.addEventListener('touchend', (e) => {
+    if (isPinching && e.touches.length < 2) {
+      isPinching = false;
+    }
+    if (isPanning && e.touches.length === 0) {
+      isPanning = false;
+    }
+  });
+
+  // Double-tap to toggle zoom (mobile)
+  let lastTap = 0;
+  imageZoomOverlay.addEventListener('click', (e) => {
+    // if clicking the image itself, toggle stronger zoom
+    if (e.target === zoomedImage) {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        // double-tap
+        if (currentScale > 1.4) {
+          currentScale = 1; posX = 0; posY = 0;
+        } else {
+          currentScale = 2.2;
+        }
+        setTransform();
+      }
+      lastTap = now;
+    }
+  });
 
   const specs = [
     ['SKU', sku],
@@ -158,6 +303,13 @@ document.addEventListener('DOMContentLoaded', () => {
         card.appendChild(img);
         card.appendChild(info);
         card.appendChild(actions);
+
+        // clicking the card (outside action buttons) navigates to the details page
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.related-actions')) return; // let buttons handle clicks
+          window.location.href = viewBtn.href;
+        });
 
         relatedContainer.appendChild(card);
       });
