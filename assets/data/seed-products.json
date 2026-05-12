@@ -1,5 +1,21 @@
 [
   {
+    "name": "New Product",
+    "category": "General",
+    "price": "0",
+    "priority": "0",
+    "length": "",
+    "width": "",
+    "height": "",
+    "boardDepth": "",
+    "frameSize": "",
+    "material": "",
+    "weight": "",
+    "color": "",
+    "desc": "",
+    "image": ""
+  },
+  {
     "name": "Office Pro 120",
     "category": "Office",
     "price": 8500,
@@ -95,7 +111,6 @@
     "color": "Cherry",
     "desc": "Premium executive desk with generous workspace and premium finish."
   },
-
   {
     "name": "Study Mini 90",
     "category": "Study",
@@ -176,7 +191,6 @@
     "color": "Beech",
     "desc": "Ergonomic study desk with slightly taller height for improved posture."
   },
-
   {
     "name": "Gaming Desk Pro",
     "category": "Gaming",
@@ -257,7 +271,6 @@
     "color": "Stealth",
     "desc": "Stable mid-size gaming desk with accessory rack."
   },
-
   {
     "name": "L-Shaped Duo 160",
     "category": "L-Shaped",
@@ -322,7 +335,6 @@
     "color": "Mahogany",
     "desc": "Professional L-shaped desk for executives and shared workspaces."
   },
-
   {
     "name": "Compact Fold 80",
     "category": "Compact",

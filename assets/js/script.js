@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================
   // Contact form -> WhatsApp
   // ==========================
-  const CONTACT_WHATSAPP_NUMBER = '8801XXXXXXXXX'; // international format without +
+  let CONTACT_WHATSAPP_NUMBER = '8801XXXXXXXXX'; // international format without +
 
   function openWhatsAppWithMessage(number, text) {
     const encoded = encodeURIComponent(text);
@@ -175,10 +175,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const adminBackdrop = document.getElementById('adminBackdrop');
   const adminClose = document.getElementById('adminClose');
   const adminList = document.getElementById('adminList');
+  const adminReviewsEl = document.getElementById('adminReviews');
+  const adminSiteEl = document.getElementById('adminSite');
   const adminAdd = document.getElementById('adminAdd');
   const adminExport = document.getElementById('adminExport');
   const adminImport = document.getElementById('adminImport');
   const adminLogout = document.getElementById('adminLogout');
+  const adminAddReview = document.getElementById('adminAddReview');
 
   const ADMIN_LOCK_KEY = 'lds_admin_lock';
   const ADMIN_LOCK_TIMEOUT = 10 * 60 * 1000; // 10 minutes
@@ -305,7 +308,83 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveProducts(products) {
-    localStorage.setItem('lds_products', JSON.stringify(products));
+    // keep local copy for immediate UI updates
+    try { localStorage.setItem('lds_products', JSON.stringify(products)); } catch (e) {}
+    // attempt to persist to server if available
+    try {
+      fetch('/api/products', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(products)
+      }).then(res => {
+        if (!res.ok) console.warn('Failed to persist to /api/products', res.status);
+      }).catch(err => {
+        console.warn('Persist to server failed', err && err.message);
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  // Site data (contact, reviews)
+  function loadSite() {
+    try {
+      const raw = localStorage.getItem('lds_site');
+      if (raw) return JSON.parse(raw);
+    } catch(e){}
+    // fallback: derive from DOM
+    const phone = document.getElementById('contactPhone')?.textContent?.trim() || '';
+    const email = document.getElementById('contactEmail')?.textContent?.trim() || '';
+    const address = document.getElementById('contactAddress')?.textContent?.trim() || '';
+    const hours = document.getElementById('contactHours')?.textContent?.trim() || '';
+    // reviews from DOM
+    const reviews = [];
+    document.querySelectorAll('#reviewsList .review-card').forEach(rc => {
+      const name = rc.querySelector('.review-name')?.textContent || '';
+      const text = rc.querySelector('.review-text')?.textContent || '';
+      const meta = rc.querySelector('.review-meta small')?.textContent || '';
+      const footer = rc.querySelector('.review-footer')?.textContent || '';
+      reviews.push({ name, meta, text, footer });
+    });
+    return { contact: { phone, email, address, hours }, reviews };
+  }
+
+  function saveSite(site) {
+    try { localStorage.setItem('lds_site', JSON.stringify(site)); } catch(e){}
+    // attempt to persist to server
+    try {
+      fetch('/api/site', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(site) })
+        .then(res => { if (!res.ok) console.warn('Failed to persist site', res.status); })
+        .catch(err => console.warn('Persist site failed', err && err.message));
+    } catch (e) {}
+    // update live DOM
+    try { applySiteToDOM(site); } catch(e){}
+  }
+
+  function applySiteToDOM(site) {
+    if (!site) return;
+    const c = site.contact || {};
+    if (c.whatsapp) CONTACT_WHATSAPP_NUMBER = String(c.whatsapp).replace(/^\+/, '').replace(/[^0-9]/g,'');
+    if (c.phone) {
+      const p = document.getElementById('contactPhone'); if (p) { p.textContent = c.phone; p.href = 'tel:' + c.phone.replace(/\s+/g,''); }
+    }
+    if (c.email) { const e = document.getElementById('contactEmail'); if (e) { e.textContent = c.email; e.href = 'mailto:' + c.email; } }
+    if (c.address) { const a = document.getElementById('contactAddress'); if (a) a.textContent = c.address; }
+    if (c.hours) { const h = document.getElementById('contactHours'); if (h) h.textContent = c.hours; }
+    // reviews
+    if (Array.isArray(site.reviews)) renderReviewsList(site.reviews);
+  }
+
+  function renderReviewsList(reviews) {
+    const container = document.getElementById('reviewsList'); if (!container) return;
+    container.innerHTML = (reviews || []).map(r => `
+      <article class="review-card" role="listitem">
+        <div class="review-avatar"><img src="${r.avatar||'assets/images/avatar-1.svg'}" alt="Avatar of ${r.name||''}" width="72" height="72"></div>
+        <div class="review-body">
+          <div class="review-name">${(r.name||'').replace(/</g,'&lt;')} <span class="review-meta">${(r.meta||'')}</span></div>
+          <div class="review-meta">${r.stars?`<span class="review-stars">${r.stars}</span>`:''} <small>${r.rating? r.rating + '/5' : ''}</small></div>
+          <div class="review-text">${(r.text||'').replace(/</g,'&lt;')}</div>
+          <div class="review-footer">${(r.footer||'')}</div>
+        </div>
+      </article>
+    `).join('\n');
   }
 
   function createDetailsUrl(p) {
@@ -357,64 +436,120 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderAdminList(products) {
+    // Render concise list with Edit link for each product (opens admin-edit.html?idx=N)
     adminList.innerHTML = '';
+    const list = document.createElement('div');
+    list.className = 'admin-list-compact';
     products.forEach((p, idx) => {
-      const item = document.createElement('div');
-      item.className = 'admin-item';
-      item.dataset.index = idx;
-      item.innerHTML = `
-        <div class="admin-fields">
-          <label>Title<br><input title="Title" data-key="name" value="${(p.name||'').replace(/"/g,'&quot;')}" placeholder="Product name"></label>
-          <label>Category<br><input title="Category" data-key="category" value="${(p.category||'').replace(/"/g,'&quot;')}" placeholder="Category"></label>
-          <label>Price<br><input title="Price" data-key="price" value="${(p.price||'').replace(/"/g,'&quot;')}" placeholder="Price"></label>
-          <label>Priority<br><input title="Priority" data-key="priority" value="${(p.priority||'0').replace(/"/g,'&quot;')}" placeholder="Priority (higher = shows earlier)"></label>
-          <label>Image URL<br><input title="Image URL" data-key="image" value="${(p.image||'').replace(/"/g,'&quot;')}" placeholder="Image URL"></label>
-          <label>Length<br><input title="Length" data-key="length" value="${(p.length||'').replace(/"/g,'&quot;')}" placeholder="Length"></label>
-          <label>Width<br><input title="Width" data-key="width" value="${(p.width||'').replace(/"/g,'&quot;')}" placeholder="Width"></label>
-          <label>Height<br><input title="Height" data-key="height" value="${(p.height||'').replace(/"/g,'&quot;')}" placeholder="Height"></label>
-          <label>Board Depth<br><input title="Board Depth" data-key="boardDepth" value="${(p.boardDepth||'').replace(/"/g,'&quot;')}" placeholder="Board Depth"></label>
-          <label>Frame Size<br><input title="Frame Size" data-key="frameSize" value="${(p.frameSize||'').replace(/"/g,'&quot;')}" placeholder="Frame Size"></label>
-          <label>Material<br><input title="Material" data-key="material" value="${(p.material||'').replace(/"/g,'&quot;')}" placeholder="Material"></label>
-          <label>Weight<br><input title="Weight" data-key="weight" value="${(p.weight||'').replace(/"/g,'&quot;')}" placeholder="Weight"></label>
-          <label>Color/Finish<br><input title="Color/Finish" data-key="color" value="${(p.color||'').replace(/"/g,'&quot;')}" placeholder="Color/Finish"></label>
-          <label>Description<br><textarea title="Short description" data-key="desc" placeholder="Short description">${(p.desc||'').replace(/</g,'&lt;')}</textarea></label>
+      const row = document.createElement('div');
+      row.className = 'admin-list-row';
+      row.dataset.index = idx;
+      row.innerHTML = `
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:40px"><img src="${(p.image||'assets/images/placeholder.svg')}" alt="" style="max-width:40px;max-height:40px"></div>
+          <div style="flex:1"><strong>${(p.name||'Untitled').replace(/</g,'&lt;')}</strong><div style="font-size:13px;color:#666">${(p.category||'').replace(/</g,'&lt;')} • ৳ ${p.price||''}</div></div>
+          <div style="display:flex;gap:8px">
+            <a class="btn" href="admin-edit.html?idx=${idx}">Edit</a>
+            <button class="btn admin-delete" style="background:#e06b6b">Delete</button>
+          </div>
         </div>
-        <div class="admin-item-controls">
-          <button class="btn admin-save">Save</button>
-          <button class="btn admin-delete" style="background:#e06b6b">Delete</button>
-        </div>`;
-      adminList.appendChild(item);
+      `;
+      list.appendChild(row);
     });
+    adminList.appendChild(list);
 
-    // wire controls
-    adminList.querySelectorAll('.admin-save').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const item = e.currentTarget.closest('.admin-item');
-        const index = Number(item.dataset.index);
-        const inputs = item.querySelectorAll('[data-key]');
-        const prod = {};
-        inputs.forEach(inp => { prod[inp.dataset.key] = inp.value; });
-        const all = loadProducts();
-        all[index] = Object.assign({}, all[index], prod);
-        saveProducts(all);
-        renderProductsToDOM(all);
-        bindProductInteractions();
-        alert('Saved — changes applied');
-      });
-    });
-
+    // wire delete buttons
     adminList.querySelectorAll('.admin-delete').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        if (!confirm('Delete this product?')) return;
-        const item = e.currentTarget.closest('.admin-item');
-        const index = Number(item.dataset.index);
+        if (!confirm('Delete this product from database?')) return;
+        const row = e.currentTarget.closest('.admin-list-row');
+        const idx = Number(row.dataset.index);
         const all = loadProducts();
-        all.splice(index,1);
+        all.splice(idx,1);
         saveProducts(all);
         renderAdminList(all);
         renderProductsToDOM(all);
         bindProductInteractions();
       });
+    });
+  }
+
+  function renderAdminReviews(site) {
+    if (!adminReviewsEl) return;
+    const reviews = (site && Array.isArray(site.reviews)) ? site.reviews : [];
+    adminReviewsEl.innerHTML = '';
+    reviews.forEach((r, i) => {
+      const item = document.createElement('div');
+      item.className = 'admin-item';
+      item.dataset.index = i;
+      item.innerHTML = `
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <label style="flex:1">Name<br><input data-key="name" value="${(r.name||'').replace(/"/g,'&quot;')}"></label>
+          <label style="flex:1">Location/meta<br><input data-key="meta" value="${(r.meta||'').replace(/"/g,'&quot;')}"></label>
+          <label style="width:120px">Rating (1-5)<br><input data-key="rating" value="${(r.rating||'').replace(/"/g,'&quot;')}"></label>
+          <label style="width:140px">Avatar URL<br><input data-key="avatar" value="${(r.avatar||'').replace(/"/g,'&quot;')}"></label>
+        </div>
+        <label>Review text<br><textarea data-key="text">${(r.text||'').replace(/</g,'&lt;')}</textarea></label>
+        <label>Footer<br><input data-key="footer" value="${(r.footer||'').replace(/"/g,'&quot;')}"></label>
+        <div style="margin-top:8px"><button class="btn review-save">Save</button> <button class="btn review-delete" style="background:#e06b6b">Delete</button></div>
+      `;
+      adminReviewsEl.appendChild(item);
+    });
+
+    // wire buttons
+    adminReviewsEl.querySelectorAll('.review-save').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const item = e.currentTarget.closest('.admin-item');
+        const idx = Number(item.dataset.index);
+        const inputs = item.querySelectorAll('[data-key]');
+        const obj = {};
+        inputs.forEach(inp => obj[inp.dataset.key] = inp.value);
+        const site = loadSite();
+        site.reviews = site.reviews || [];
+        site.reviews[idx] = obj;
+        saveSite(site);
+        renderAdminReviews(site);
+        alert('Review saved');
+      });
+    });
+
+    adminReviewsEl.querySelectorAll('.review-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (!confirm('Delete this review?')) return;
+        const item = e.currentTarget.closest('.admin-item');
+        const idx = Number(item.dataset.index);
+        const site = loadSite();
+        site.reviews = site.reviews || [];
+        site.reviews.splice(idx,1);
+        saveSite(site);
+        renderAdminReviews(site);
+      });
+    });
+  }
+
+  function renderAdminSite(site) {
+    if (!adminSiteEl) return;
+    const c = (site && site.contact) ? site.contact : { phone: '', whatsapp: '', email:'', address:'', hours: '' };
+    adminSiteEl.innerHTML = `
+      <label>Phone<br><input id="_admin_site_phone" value="${(c.phone||'').replace(/"/g,'&quot;')}"></label>
+      <label>WhatsApp (number)<br><input id="_admin_site_wa" value="${(c.whatsapp||'').replace(/"/g,'&quot;')}"></label>
+      <label>Email<br><input id="_admin_site_email" value="${(c.email||'').replace(/"/g,'&quot;')}"></label>
+      <label>Address<br><input id="_admin_site_address" value="${(c.address||'').replace(/"/g,'&quot;')}"></label>
+      <label>Hours<br><input id="_admin_site_hours" value="${(c.hours||'').replace(/"/g,'&quot;')}"></label>
+      <div style="margin-top:8px"><button id="_admin_site_save" class="btn">Save Site Info</button></div>
+    `;
+    document.getElementById('_admin_site_save').addEventListener('click', () => {
+      const siteNow = loadSite();
+      siteNow.contact = {
+        phone: document.getElementById('_admin_site_phone').value,
+        whatsapp: document.getElementById('_admin_site_wa').value,
+        email: document.getElementById('_admin_site_email').value,
+        address: document.getElementById('_admin_site_address').value,
+        hours: document.getElementById('_admin_site_hours').value
+      };
+      saveSite(siteNow);
+      renderAdminSite(siteNow);
+      alert('Site info saved');
     });
   }
 
@@ -448,6 +583,16 @@ document.addEventListener("DOMContentLoaded", () => {
       renderAdminList(all);
       renderProductsToDOM(all);
       bindProductInteractions();
+    });
+  }
+
+  if (adminAddReview) {
+    adminAddReview.addEventListener('click', () => {
+      const site = loadSite();
+      site.reviews = site.reviews || [];
+      site.reviews.unshift({ name: 'New Reviewer', meta: '', rating: '5', text: 'New review content', footer: '' });
+      saveSite(site);
+      renderAdminReviews(site);
     });
   }
 
@@ -540,7 +685,26 @@ document.addEventListener("DOMContentLoaded", () => {
         refreshAdminLock();
         startAdminHeartbeat();
         // render admin UI now that lock is claimed
-        try { renderAdminList(loadProducts()); } catch (e) {}
+        try { 
+          renderAdminList(loadProducts()); 
+          // load site info from server if available
+          (async ()=>{
+            try {
+              const res = await fetch('/api/site', { cache: 'no-store' });
+              if (res.ok) {
+                const site = await res.json();
+                try { localStorage.setItem('lds_site', JSON.stringify(site)); } catch(e){}
+                renderAdminReviews(site);
+                renderAdminSite(site);
+                return;
+              }
+            } catch(e){}
+            // fallback to local
+            const s = loadSite();
+            renderAdminReviews(s);
+            renderAdminSite(s);
+          })();
+        } catch (e) {}
       }
     }
   } catch (e) {}
@@ -552,14 +716,45 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // On load: if stored products exist, render them and bind interactions
   try {
-    const stored = localStorage.getItem('lds_products');
-    if (stored) {
-      const products = JSON.parse(stored);
-      if (Array.isArray(products) && products.length) {
-        renderProductsToDOM(products);
-        bindProductInteractions();
+    // First try to load products from server API; if unavailable, fall back to localStorage
+    (async function(){
+      try {
+        const res = await fetch('/api/products', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            saveProducts(data); // saves to localStorage and attempts server persist
+            renderProductsToDOM(data);
+            bindProductInteractions();
+            return;
+          }
+        }
+      } catch(e) {
+        // fetch failed; fall back
       }
-    }
+      const stored = localStorage.getItem('lds_products');
+      if (stored) {
+        const products = JSON.parse(stored);
+        if (Array.isArray(products) && products.length) {
+          renderProductsToDOM(products);
+          bindProductInteractions();
+        }
+      }
+    })();
+    // load site info (contact & reviews) from server if available
+    (async function(){
+      try {
+        const res = await fetch('/api/site', { cache: 'no-store' });
+        if (res.ok) {
+          const site = await res.json();
+          try { localStorage.setItem('lds_site', JSON.stringify(site)); } catch(e){}
+          applySiteToDOM(site);
+          return;
+        }
+      } catch(e) {}
+      // fallback to local/site derived from DOM
+      try { applySiteToDOM(loadSite()); } catch(e){}
+    })();
   } catch (e) { /* ignore parse errors */ }
 
 });

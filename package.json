@@ -1,9 +1,14 @@
 {
-  "name": "liton-desk-studio-playwright",
+  "name": "liton-desk-studio-site",
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
     "report": "node tools/playwright-report.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
   },
   "devDependencies": {
     "playwright": "^1.39.0"
