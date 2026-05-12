@@ -463,12 +463,34 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (adminImport) {
-    adminImport.addEventListener('click', () => {
+    adminImport.addEventListener('click', async () => {
+      const filePath = 'assets/data/seed-products.json';
+      // Try to fetch the JSON file bundled in the repo first
+      try {
+        const res = await fetch(filePath, { cache: 'no-store' });
+        if (res.ok) {
+          const proceed = confirm('Import products from "' + filePath + '"? This will overwrite current products. Continue?');
+          if (!proceed) return;
+          const data = await res.json();
+          if (!Array.isArray(data)) throw new Error('Expected JSON array');
+          saveProducts(data);
+          renderAdminList(data);
+          renderProductsToDOM(data);
+          bindProductInteractions();
+          alert('Imported products from file and applied.');
+          return;
+        }
+      } catch (e) {
+        console.warn('Fetch of', filePath, 'failed:', e && e.message);
+      }
+
+      // Fallback to manual paste if file fetch not available (file:// or missing)
       const txt = prompt('Paste products JSON here:');
       if (!txt) return;
       try {
         const data = JSON.parse(txt);
         if (!Array.isArray(data)) throw new Error('Expected array');
+        if (!confirm('Import pasted JSON and overwrite current products?')) return;
         saveProducts(data);
         renderAdminList(data);
         renderProductsToDOM(data);
